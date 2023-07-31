@@ -1,49 +1,89 @@
-.App {
-  text-align: center;
-  min-height: 100vh;
+import React, { Component } from 'react';
+import DataStreamer, { ServerRespond } from './DataStreamer';
+import Graph from './Graph';
+import './App.css';
+ 
+/**
+ * State declaration for <App />
+ */
+interface IState {
+  data: ServerRespond[],
+  showGraph: boolean
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 40vmin;
-}
+/**
+ * The parent element of the react app.
+ * It renders title, button and Graph react element.
+ */
+class App extends Component<{}, IState> {
+  constructor(props: {}) {
+    super(props);
 
-.App-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  margin-bottom: 12px;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-.App-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.Stream-button {
-  margin-bottom: 12px;
-}
-
-.Graph {
-  min-height: 50vh;
-  width: 700px;
-  margin-bottom: 12px;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+    this.state = {
+      // data saves the server responds.
+      // We use this state to parse data down to the child element (Graph) as element property
+      data: [],
+      showGraph: false
+    };
   }
-  to {
-    transform: rotate(360deg);
+
+  /**
+   * Render Graph react component with state.data parse as property data
+   */
+  renderGraph() {
+    if (this.state.showGraph){
+      return (<Graph data={this.state.data}/>)
+    }
+  }
+
+  /**
+   * Get new data from server and update the state with the new data
+   */
+  getDataFromServer() {
+    DataStreamer.getData((serverResponds: ServerRespond[]) => {
+      // Update the state by creating a new array of data that consists of
+      // Previous data in the state and the new data from server
+              let x = 0;
+              const interval = setInterval(() => {
+                  DataStreamer.getData((serverResponds: ServerRespond[]) => {
+                      this.setState({
+                          data: serverResponds,
+                          showGraph: true
+                      });
+                  });
+                  x++;
+                  if (x > 1000) {
+                      clearInterval(interval);
+                  }
+              }, 100);
+  }
+
+  /**
+   * Render the App react component
+   */
+  render() {
+    return (
+      <div className="App">
+        <header className="App-header">
+          Bank & Merge Co Task 2
+        </header>
+        <div className="App-content">
+          <button className="btn btn-primary Stream-button"
+            // when button is click, our react app tries to request
+            // new data from the server.
+            // As part of your task, update the getDataFromServer() function
+            // to keep requesting the data every 100ms until the app is closed
+            // or the server does not return anymore data.
+            onClick={() => {this.getDataFromServer()}}>
+            Start Streaming Data
+          </button>
+          <div className="Graph">
+            {this.renderGraph()}
+          </div>
+        </div>
+      </div>
+    )
   }
 }
+
+export default App;
